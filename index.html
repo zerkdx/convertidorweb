@@ -1,0 +1,1227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#333333">
+<link rel="manifest" href="manifest.json">
+<title>Convertidor de Archivos</title>
+<style>
+  :root {
+    --bg: #f2f2f2;
+    --caja: #fff;
+    --texto: #222;
+    --texto2: #555;
+    --borde: #ccc;
+    --borde2: #888;
+    --zona: #fafafa;
+    --zonaHover: #f0f0f0;
+    --btn: #333;
+    --btnHover: #000;
+    --btnTexto: #fff;
+    --advBg: #fff8e1;
+    --advBorde: #f0ad4e;
+    --advTexto: #664d03;
+    --infoBg: #e7f3ff;
+    --infoBorde: #2196F3;
+    --infoTexto: #0d47a1;
+    --alertaBg: #fff3cd;
+    --alertaTexto: #664d03;
+  }
+  body.oscuro {
+    --bg: #1a1a1a;
+    --caja: #2a2a2a;
+    --texto: #eee;
+    --texto2: #aaa;
+    --borde: #444;
+    --borde2: #666;
+    --zona: #333;
+    --zonaHover: #3a3a3a;
+    --btn: #555;
+    --btnHover: #777;
+    --btnTexto: #fff;
+    --advBg: #3a2f10;
+    --advBorde: #f0ad4e;
+    --advTexto: #f0d38a;
+    --infoBg: #1a2a3a;
+    --infoBorde: #2196F3;
+    --infoTexto: #a8d0f0;
+    --alertaBg: #3a2f10;
+    --alertaTexto: #f0d38a;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100%; }
+  body {
+    font-family: Arial, sans-serif;
+    background: var(--bg);
+    color: var(--texto);
+    padding: 20px 15px;
+    text-align: center;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background 0.3s, color 0.3s;
+  }
+  .caja {
+    background: var(--caja);
+    width: 100%;
+    max-width: 560px;
+    margin: 20px auto;
+    padding: 20px;
+    border: 1px solid var(--borde);
+    border-radius: 8px;
+  }
+  h1 { font-size: 22px; margin: 0 0 10px; }
+  p { font-size: 14px; color: var(--texto2); margin: 5px 0; }
+
+  #avisoDisp {
+    display: none;
+    font-size: 13px;
+    text-align: left;
+    background: var(--infoBg);
+    border-left: 4px solid var(--infoBorde);
+    padding: 10px 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+    color: var(--infoTexto);
+    line-height: 1.4;
+  }
+  #avisoDisp.alerta {
+    background: var(--alertaBg);
+    border-left-color: var(--advBorde);
+    color: var(--alertaTexto);
+  }
+
+  .tabs {
+    display: flex;
+    margin-bottom: 15px;
+    border-bottom: 2px solid var(--borde);
+    flex-wrap: wrap;
+  }
+  .tab {
+    flex: 1;
+    min-width: 70px;
+    padding: 10px 5px;
+    cursor: pointer;
+    background: var(--zona);
+    border: none;
+    font-size: 13px;
+    border-radius: 6px 6px 0 0;
+    margin: 2px;
+    color: var(--texto);
+  }
+  .tab.activo { background: var(--btn); color: var(--btnTexto); }
+  .seccion { display: none; }
+  .seccion.activa { display: block; }
+
+  .zona {
+    border: 2px dashed var(--borde2);
+    padding: 30px 15px;
+    margin: 15px 0;
+    border-radius: 6px;
+    cursor: pointer;
+    background: var(--zona);
+    color: var(--texto);
+  }
+  .zona:hover { background: var(--zonaHover); }
+  .zona.drag { background: var(--zonaHover); border-color: var(--btn); }
+
+  select, button, input[type="number"] {
+    font-size: 15px;
+    padding: 8px 12px;
+    margin: 5px;
+    border-radius: 5px;
+    border: 1px solid var(--borde2);
+    background: var(--caja);
+    color: var(--texto);
+    max-width: 100%;
+  }
+  button.accion {
+    background: var(--btn);
+    color: var(--btnTexto);
+    cursor: pointer;
+    border: 1px solid var(--btn);
+  }
+  button.accion:hover { background: var(--btnHover); }
+  button:disabled { background: #999; cursor: not-allowed; }
+
+  .resultado { margin-top: 15px; text-align: left; }
+  .resultado p { color: var(--texto); }
+
+  .item {
+    border: 1px solid var(--borde);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin: 6px 0;
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .item .miniatura {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid var(--borde);
+    flex-shrink: 0;
+  }
+  .item .info {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .item .info .nombre {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: bold;
+    color: var(--texto);
+  }
+  .item .info small {
+    color: var(--texto2);
+  }
+  .item button { font-size: 12px; padding: 5px 8px; margin: 0; }
+
+  .advertencia {
+    display: none;
+    font-size: 13px;
+    text-align: left;
+    background: var(--advBg);
+    border-left: 4px solid var(--advBorde);
+    padding: 10px 12px;
+    margin: 10px 0;
+    border-radius: 4px;
+    color: var(--advTexto);
+    line-height: 1.4;
+  }
+
+  .fila {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    margin: 6px 0;
+  }
+  .fila label { font-size: 13px; color: var(--texto2); }
+
+  #barraSup {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    z-index: 50;
+  }
+  #barraSup button {
+    background: var(--btn);
+    color: var(--btnTexto);
+    font-size: 12px;
+    padding: 6px 10px;
+    margin: 0;
+  }
+
+#modalContenido a {
+  color: var(--infoBorde);
+  text-decoration: underline;
+  word-break: break-all;
+}
+#modalContenido a:hover {
+  opacity: 0.8;
+}
+
+  #modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    justify-content: center;
+    align-items: center;
+    padding: 15px;
+    z-index: 100;
+    overflow-y: auto;
+  }
+  #modalContenido {
+    background: var(--caja);
+    color: var(--texto);
+    padding: 20px;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 480px;
+    text-align: left;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  #modalContenido h2 { font-size: 18px; margin-top: 0; }
+  #modalContenido h3 { font-size: 15px; margin: 15px 0 5px; color: var(--texto); }
+  #modalContenido p { font-size: 13px; line-height: 1.5; margin: 5px 0; color: var(--texto2); }
+  .cerrar {
+    display: block;
+    margin: 15px auto 0;
+    background: var(--btn);
+    color: var(--btnTexto);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+  }
+
+  #cargando {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    padding: 20px;
+  }
+  #cargandoCaja {
+    background: var(--caja);
+    color: var(--texto);
+    padding: 25px 30px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 220px;
+    max-width: 90%;
+  }
+  #cargandoCaja p { margin: 15px 0 0; font-size: 14px; color: var(--texto); }
+  .spinner {
+    width: 40px; height: 40px;
+    margin: 0 auto;
+    border: 4px solid var(--borde);
+    border-top: 4px solid var(--btn);
+    border-radius: 50%;
+    animation: girar 1s linear infinite;
+  }
+  @keyframes girar { to { transform: rotate(360deg); } }
+
+  #progreso {
+    height: 6px;
+    background: var(--borde);
+    border-radius: 3px;
+    margin-top: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  #progresoBarra {
+    height: 100%;
+    background: var(--btn);
+    width: 0%;
+    transition: width 0.2s;
+  }
+
+  #reproductorAudio { width: 100%; margin-top: 10px; display: none; }
+
+  .slider { width: 100%; margin: 5px 0; }
+
+  @media (max-width: 480px) {
+    body { padding: 12px 10px; }
+    .caja { padding: 15px; margin: 10px auto; }
+    h1 { font-size: 19px; }
+    .tab { font-size: 12px; padding: 8px 3px; }
+    select, button, input[type="number"] { font-size: 13px; padding: 7px 9px; }
+    #barraSup button { font-size: 11px; padding: 5px 8px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="barraSup">
+  <button id="btnTema">🌙 Oscuro</button>
+  <button id="btnInfo">❓ Info</button>
+</div>
+
+<div class="caja">
+  <h1>Convertidor de Archivos</h1>
+  <p>Convierte sin subir nada a internet.</p>
+
+  <div id="avisoDisp"></div>
+
+  <div class="tabs">
+    <button class="tab activo" data-tab="img">Imágenes</button>
+    <button class="tab" data-tab="audio">Audio</button>
+    <button class="tab" data-tab="video">Video</button>
+    <button class="tab" data-tab="pdf">PDF</button>
+    <button class="tab" data-tab="ocr">OCR</button>
+  </div>
+
+  <!-- IMÁGENES -->
+  <div class="seccion activa" id="sec-img">
+    <div class="zona" id="zonaImg">
+      Arrastra imágenes aquí<br>o toca para elegirlas (varias)
+      <input type="file" id="archivoImg" accept="image/*" multiple hidden>
+    </div>
+
+    <div class="fila">
+      <label>Formato:
+        <select id="formatoImg">
+          <option value="image/jpeg">JPG</option>
+          <option value="image/png">PNG</option>
+          <option value="image/webp">WEBP</option>
+          <option value="image/avif">AVIF</option>
+          <option value="image/bmp">BMP</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="fila">
+      <label>Ancho (px, opcional): <input type="number" id="anchoImg" min="1" placeholder="auto" style="width:80px;"></label>
+      <label>Alto (px, opcional): <input type="number" id="altoImg" min="1" placeholder="auto" style="width:80px;"></label>
+    </div>
+
+    <div class="fila">
+      <label style="width:100%;">Calidad: <span id="calidadVal">90%</span>
+        <input type="range" id="calidadImg" min="10" max="100" value="90" class="slider">
+      </label>
+    </div>
+
+    <div class="advertencia" id="advImg"></div>
+    <button class="accion" id="btnConvertirImg">Convertir</button>
+    <div class="resultado" id="resImg"></div>
+  </div>
+
+  <!-- AUDIO -->
+  <div class="seccion" id="sec-audio">
+    <div class="zona" id="zonaAudio">
+      Arrastra audios aquí<br>o toca para elegirlos (varios)
+      <input type="file" id="archivoAudio" accept="audio/*" multiple hidden>
+    </div>
+
+    <div class="fila">
+      <label>Formato:
+        <select id="formatoAudio">
+          <option value="mp3">MP3</option>
+          <option value="wav">WAV</option>
+          <option value="ogg">OGG</option>
+          <option value="m4a">M4A</option>
+          <option value="aac">AAC</option>
+          <option value="flac">FLAC</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="advertencia" id="advAudio"></div>
+    <audio id="reproductorAudio" controls></audio>
+    <button class="accion" id="btnConvertirAudio">Convertir</button>
+    <div class="resultado" id="resAudio"></div>
+  </div>
+
+  <!-- VIDEO -->
+  <div class="seccion" id="sec-video">
+    <div class="zona" id="zonaVideo">
+      Arrastra un video aquí<br>o toca para elegirlo
+      <input type="file" id="archivoVideo" accept="video/*" hidden>
+    </div>
+
+    <div class="fila">
+      <label>Formato:
+        <select id="formatoVideo">
+          <option value="mp4">MP4</option>
+          <option value="webm">WEBM</option>
+          <option value="gif">GIF</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="advertencia" id="advVideo"></div>
+    <button class="accion" id="btnConvertirVideo">Convertir</button>
+    <div class="resultado" id="resVideo"></div>
+  </div>
+
+  <!-- PDF -->
+  <div class="seccion" id="sec-pdf">
+    <div class="zona" id="zonaPdf">
+      Arrastra imágenes o un PDF aquí<br>o toca para elegir
+      <input type="file" id="archivoPdf" accept="image/*,application/pdf" multiple hidden>
+    </div>
+
+    <div class="fila">
+      <label>Acción:
+        <select id="accionPdf">
+          <option value="img2pdf">Imágenes → PDF</option>
+          <option value="pdf2img">PDF → Imágenes (JPG)</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="advertencia" id="advPdf"></div>
+    <button class="accion" id="btnConvertirPdf">Convertir</button>
+    <div class="resultado" id="resPdf"></div>
+  </div>
+
+  <!-- OCR -->
+  <div class="seccion" id="sec-ocr">
+    <div class="zona" id="zonaOcr">
+      Arrastra una imagen con texto aquí<br>o toca para elegirla
+      <input type="file" id="archivoOcr" accept="image/*" hidden>
+    </div>
+
+    <div class="fila">
+      <label>Idioma:
+        <select id="idiomaOcr">
+          <option value="spa">Español</option>
+          <option value="eng">Inglés</option>
+          <option value="spa+eng">Español + Inglés</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="advertencia" id="advOcr">
+      <strong>OCR:</strong> extrae texto de imágenes. La primera vez descarga ~15 MB de librería. Puede tardar. La precisión depende de la calidad de la imagen.
+    </div>
+    <button class="accion" id="btnConvertirOcr">Extraer texto</button>
+    <div class="resultado" id="resOcr"></div>
+  </div>
+
+</div>
+
+<!-- MODAL INFO -->
+<div id="modal">
+  <div id="modalContenido">
+    <h2>¿Cómo funciona esta web?</h2>
+    <p>
+      <strong>1.</strong> Eliges uno o varios archivos.<br>
+      <strong>2.</strong> Seleccionas el formato o acción.<br>
+      <strong>3.</strong> Todo ocurre <strong>dentro de tu navegador</strong>.<br><br>
+      <strong>Nada se sube a ningún servidor.</strong> No se guarda, no se envía, no se comparte. Puedes desconectar el WiFi después de cargar la página.
+    </p>
+
+    <h3>Preguntas frecuentes</h3>
+    <p><strong>¿Mis archivos se suben a algún servidor?</strong><br>No. Todo ocurre en tu navegador. Nadie más los ve.</p>
+    <p><strong>¿Es gratis?</strong><br>Sí, sin registro ni límites impuestos por la web.</p>
+    <p><strong>¿Necesito internet?</strong><br>Solo la primera vez, para cargar la página y las librerías. Después puedes usarla sin conexión.</p>
+    <p><strong>¿Por qué me advierte de mi dispositivo?</strong><br>La web intenta detectar si tu dispositivo tiene suficiente memoria para audio, video y OCR. La detección <strong>puede fallar</strong>: igual puedes intentarlo. Si algo no funciona, prueba WAV para audio, o usa un PC.</p>
+    <p><strong>¿Pierdo calidad?</strong><br>Formatos con pérdida (JPG, MP3) reducen un poco la calidad. Sin pérdida (PNG, WAV, FLAC) la mantienen pero pesan más.</p>
+    <p><strong>¿Hay límite de tamaño?</strong><br>No lo impone la web. Depende de la memoria de tu dispositivo. Archivos muy grandes pueden fallar en móviles.</p>
+    <p><strong>¿Puedo convertir varios archivos a la vez?</strong><br>Sí, en imágenes, audio y PDF. En video y OCR, uno a la vez.</p>
+    <p><strong>¿Funciona en móvil?</strong><br>Sí. Todos los formatos están disponibles, pero en dispositivos con poca memoria algunos pueden fallar.</p>
+    <p><strong>¿Qué es OCR?</strong><br>Reconoce texto dentro de una imagen y lo convierte en texto editable. Útil para documentos, carteles o capturas.</p>
+    <p><strong>¿Qué hace PDF?</strong><br>Une varias imágenes en un PDF, o extrae las páginas de un PDF como imágenes JPG.</p>
+    <p><strong>¿Puedo instalarla como app?</strong><br>Sí. En Chrome del móvil, menú → "Añadir a pantalla de inicio". Funcionará como app y offline.</p>
+    
+    <h3>Créditos</h3>
+<p>
+  Esta web fue creada por <strong>zerk</strong>.<br>
+  Funciona con Canvas API, WebAssembly (FFmpeg) y librerías de código abierto.<br><br>
+  Contacto:<br>
+  <a href="https://discord.gg/gGUgTDWy" target="_blank" rel="noopener" style="color:var(--infoBorde);word-break:break-all;">https://discord.gg/gGUgTDWy</a>
+</p>
+
+    <button class="cerrar" onclick="cerrarModal()">Entendido</button>
+  </div>
+</div>
+
+<!-- CARGA -->
+<div id="cargando">
+  <div id="cargandoCaja">
+    <div class="spinner"></div>
+    <p id="cargandoTexto">Procesando...</p>
+    <div id="progreso"><div id="progresoBarra"></div></div>
+  </div>
+</div>
+
+<script>
+  // =========================================================
+  // UTILIDADES
+  // =========================================================
+  const cargando = document.getElementById('cargando');
+  const cargandoTexto = document.getElementById('cargandoTexto');
+  const progreso = document.getElementById('progreso');
+  const progresoBarra = document.getElementById('progresoBarra');
+
+  function mostrarCarga(t, conProgreso) {
+    cargandoTexto.textContent = t || 'Procesando...';
+    cargando.style.display = 'flex';
+    if (conProgreso) { progreso.style.display = 'block'; progresoBarra.style.width = '0%'; }
+    else { progreso.style.display = 'none'; }
+  }
+  function setProgreso(pct) { progresoBarra.style.width = pct + '%'; }
+  function ocultarCarga() { cargando.style.display = 'none'; progreso.style.display = 'none'; }
+
+  function pesoLegible(bytes) {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+  }
+  function ahorro(antes, despues) {
+    if (antes === 0) return '';
+    const pct = ((antes - despues) / antes) * 100;
+    if (pct > 0) return ` (ahorras ${pct.toFixed(0)}%)`;
+    if (pct < 0) return ` (aumenta ${Math.abs(pct).toFixed(0)}%)`;
+    return '';
+  }
+  function cargarScript(url) {
+    return new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = url;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+  }
+
+  // =========================================================
+  // DETECCIÓN
+  // =========================================================
+  function detectarCapacidad() {
+    const ua = navigator.userAgent || '';
+    const esMovil = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+    const ram = navigator.deviceMemory || 0;
+    const nucleos = navigator.hardwareConcurrency || 1;
+    const ancho = window.innerWidth;
+    let potente = false;
+    if (!esMovil) potente = true;
+    else {
+      if (ram >= 4 && nucleos >= 6) potente = true;
+      else if (ram === 0 && nucleos >= 8 && ancho >= 720) potente = true;
+    }
+    return { esMovil, ram, nucleos, ancho, potente };
+  }
+  const cap = detectarCapacidad();
+  console.log('Capacidad:', cap);
+
+  const avisoDisp = document.getElementById('avisoDisp');
+  if (!cap.potente && cap.esMovil) {
+    avisoDisp.innerHTML = '⚠️ <strong>Tu dispositivo podría no tener memoria suficiente</strong> para audio, video u OCR con todos los formatos. Puedes intentarlo igual: si falla, prueba <strong>WAV</strong> en audio o usa un PC. <em>(La detección puede fallar.)</em>';
+    avisoDisp.classList.add('alerta');
+    avisoDisp.style.display = 'block';
+  } else if (cap.potente && cap.esMovil) {
+    avisoDisp.innerHTML = '✅ Tu dispositivo parece compatible con todos los formatos. <em>(La detección puede fallar.)</em>';
+    avisoDisp.style.display = 'block';
+  }
+
+  // =========================================================
+  // TEMA OSCURO
+  // =========================================================
+  const btnTema = document.getElementById('btnTema');
+  if (localStorage.getItem('tema') === 'oscuro') {
+    document.body.classList.add('oscuro');
+    btnTema.textContent = '☀️ Claro';
+  }
+  btnTema.addEventListener('click', () => {
+    document.body.classList.toggle('oscuro');
+    const esOscuro = document.body.classList.contains('oscuro');
+    btnTema.textContent = esOscuro ? '☀️ Claro' : '🌙 Oscuro';
+    localStorage.setItem('tema', esOscuro ? 'oscuro' : 'claro');
+  });
+
+  // =========================================================
+  // PESTAÑAS Y MODAL
+  // =========================================================
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('activo'));
+      document.querySelectorAll('.seccion').forEach(s => s.classList.remove('activa'));
+      tab.classList.add('activo');
+      document.getElementById('sec-' + tab.dataset.tab).classList.add('activa');
+    });
+  });
+  document.getElementById('btnInfo').addEventListener('click', () => {
+    document.getElementById('modal').style.display = 'flex';
+  });
+  function cerrarModal() { document.getElementById('modal').style.display = 'none'; }
+  document.getElementById('modal').addEventListener('click', e => {
+    if (e.target.id === 'modal') cerrarModal();
+  });
+
+  // Drag & drop global
+  document.body.addEventListener('dragover', e => e.preventDefault());
+  document.body.addEventListener('drop', e => e.preventDefault());
+
+  // =========================================================
+  // IMÁGENES (lote + miniaturas)
+  // =========================================================
+  const zonaImg = document.getElementById('zonaImg');
+  const archivoImg = document.getElementById('archivoImg');
+  const formatoImg = document.getElementById('formatoImg');
+  const btnConvertirImg = document.getElementById('btnConvertirImg');
+  const resImg = document.getElementById('resImg');
+  const advImg = document.getElementById('advImg');
+  const anchoImg = document.getElementById('anchoImg');
+  const altoImg = document.getElementById('altoImg');
+  const calidadImg = document.getElementById('calidadImg');
+  const calidadVal = document.getElementById('calidadVal');
+
+  let imagenesCargadas = [];
+
+  const advImgTexto = {
+    'image/jpeg': '<strong>JPG:</strong> Buena compresión. <strong>No soporta transparencia</strong>. Ideal para fotos.',
+    'image/png': '<strong>PNG:</strong> Sin pérdida, <strong>soporta transparencia</strong>. Pesa más.',
+    'image/webp': '<strong>WEBP:</strong> Moderno, buena compresión y transparencia.',
+    'image/avif': '<strong>AVIF:</strong> Excelente compresión. <strong>No funciona en navegadores antiguos</strong>.',
+    'image/bmp': '<strong>BMP:</strong> Sin compresión, archivos enormes. <strong>Puede fallar en móviles</strong>.'
+  };
+  function actualizarAdvImg() {
+    const i = advImgTexto[formatoImg.value];
+    advImg.innerHTML = i || '';
+    advImg.style.display = i ? 'block' : 'none';
+  }
+  formatoImg.addEventListener('change', actualizarAdvImg);
+  actualizarAdvImg();
+
+  calidadImg.addEventListener('input', () => {
+    calidadVal.textContent = calidadImg.value + '%';
+  });
+
+  zonaImg.addEventListener('click', () => archivoImg.click());
+  zonaImg.addEventListener('dragover', e => { e.preventDefault(); zonaImg.classList.add('drag'); });
+  zonaImg.addEventListener('dragleave', () => zonaImg.classList.remove('drag'));
+  zonaImg.addEventListener('drop', e => {
+    e.preventDefault(); zonaImg.classList.remove('drag');
+    if (e.dataTransfer.files.length) cargarImagenes(e.dataTransfer.files);
+  });
+  archivoImg.addEventListener('change', e => {
+    if (e.target.files.length) cargarImagenes(e.target.files);
+  });
+
+  function cargarImagenes(files) {
+    imagenesCargadas = [];
+    resImg.innerHTML = '';
+    let pendientes = 0;
+    for (const f of files) {
+      if (!f.type.startsWith('image/')) continue;
+      pendientes++;
+      const lector = new FileReader();
+      lector.onload = e => {
+        const img = new Image();
+        img.onload = () => {
+          imagenesCargadas.push({ archivo: f, img: img, dataUrl: e.target.result });
+          pendientes--;
+          if (pendientes === 0) mostrarMiniaturas();
+        };
+        img.src = e.target.result;
+      };
+      lector.readAsDataURL(f);
+    }
+  }
+
+  function mostrarMiniaturas() {
+    if (!imagenesCargadas.length) { resImg.innerHTML = ''; return; }
+    resImg.innerHTML = '<p>Imágenes cargadas:</p>';
+    imagenesCargadas.forEach(item => {
+      resImg.innerHTML += `<div class="item">
+        <img class="miniatura" src="${item.dataUrl}" alt="mini">
+        <span class="info">
+          <span class="nombre">${item.archivo.name}</span>
+          <small>${pesoLegible(item.archivo.size)} · ${item.img.width}×${item.img.height}</small>
+        </span>
+      </div>`;
+    });
+    resImg.innerHTML += '<p style="font-size:12px;color:var(--texto2);">Pulsa Convertir para procesarlas.</p>';
+  }
+
+  btnConvertirImg.addEventListener('click', async () => {
+    if (!imagenesCargadas.length) { alert('Primero elige imágenes.'); return; }
+    btnConvertirImg.disabled = true;
+    mostrarCarga('Convirtiendo imágenes...', true);
+    resImg.innerHTML = '';
+
+    const total = imagenesCargadas.length;
+    for (let i = 0; i < total; i++) {
+      const { archivo, img, dataUrl } = imagenesCargadas[i];
+      setProgreso((i / total) * 100);
+      try {
+        const canvas = document.createElement('canvas');
+        let w = img.width, h = img.height;
+        if (anchoImg.value && altoImg.value) { w = parseInt(anchoImg.value); h = parseInt(altoImg.value); }
+        else if (anchoImg.value) { w = parseInt(anchoImg.value); h = Math.round(img.height * (w / img.width)); }
+        else if (altoImg.value) { h = parseInt(altoImg.value); w = Math.round(img.width * (h / img.height)); }
+        canvas.width = w; canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        if (formatoImg.value === 'image/jpeg' || formatoImg.value === 'image/bmp') {
+          ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
+        }
+        ctx.drawImage(img, 0, 0, w, h);
+
+        const calidad = parseInt(calidadImg.value) / 100;
+        await new Promise(resolve => {
+          canvas.toBlob(blob => {
+            if (!blob) {
+              resImg.innerHTML += `<div class="item">
+                <img class="miniatura" src="${dataUrl}" alt="mini">
+                <span class="info"><span class="nombre">❌ ${archivo.name}</span><small>Formato no soportado</small></span>
+              </div>`;
+            } else {
+              const url = URL.createObjectURL(blob);
+              const ext = formatoImg.value.split('/')[1];
+              const nombreSalida = archivo.name.replace(/\.[^.]+$/, '') + '.' + ext;
+              const infoPeso = `${pesoLegible(archivo.size)} → ${pesoLegible(blob.size)}${ahorro(archivo.size, blob.size)}`;
+              resImg.innerHTML += `<div class="item">
+                <img class="miniatura" src="${dataUrl}" alt="mini">
+                <span class="info">
+                  <span class="nombre">✅ ${archivo.name}</span>
+                  <small>${infoPeso} · ${w}×${h}</small>
+                </span>
+                <a href="${url}" download="${nombreSalida}"><button class="accion">Descargar</button></a>
+              </div>`;
+            }
+            resolve();
+          }, formatoImg.value, calidad);
+        });
+      } catch (err) {
+        console.error(err);
+        resImg.innerHTML += `<div class="item">
+          <img class="miniatura" src="${dataUrl}" alt="mini">
+          <span class="info"><span class="nombre">❌ ${archivo.name}</span><small>Error</small></span>
+        </div>`;
+      }
+    }
+    setProgreso(100);
+    ocultarCarga();
+    btnConvertirImg.disabled = false;
+  });
+
+  // =========================================================
+  // AUDIO
+  // =========================================================
+  const zonaAudio = document.getElementById('zonaAudio');
+  const archivoAudio = document.getElementById('archivoAudio');
+  const formatoAudio = document.getElementById('formatoAudio');
+  const btnConvertirAudio = document.getElementById('btnConvertirAudio');
+  const resAudio = document.getElementById('resAudio');
+  const advAudio = document.getElementById('advAudio');
+  const reproductorAudio = document.getElementById('reproductorAudio');
+  let audiosCargados = [];
+
+  const advAudioTexto = {
+    'mp3': '<strong>MP3:</strong> Compatible con todo. Con pérdida, buen tamaño.',
+    'wav': '<strong>WAV:</strong> Sin pérdida, calidad máxima. Pesa mucho. <strong>El más confiable en dispositivos limitados.</strong>',
+    'ogg': '<strong>OGG:</strong> Buena calidad y peso. Puede fallar en Apple antiguo.',
+    'm4a': '<strong>M4A:</strong> Buena calidad, archivos pequeños. Compatible Apple.',
+    'aac': '<strong>AAC:</strong> Similar a M4A, muy usado en streaming.',
+    'flac': '<strong>FLAC:</strong> Sin pérdida, calidad perfecta. Archivos pesados.'
+  };
+  function actualizarAdvAudio() {
+    let i = advAudioTexto[formatoAudio.value] || '';
+    if (!cap.potente) i += '<br><br>⚠️ <strong>Tu dispositivo podría no tener memoria suficiente.</strong> Puedes intentarlo igual. Si falla, prueba <strong>WAV</strong> o usa un PC.';
+    advAudio.innerHTML = i;
+    advAudio.style.display = i ? 'block' : 'none';
+  }
+  formatoAudio.addEventListener('change', actualizarAdvAudio);
+  actualizarAdvAudio();
+
+  zonaAudio.addEventListener('click', () => archivoAudio.click());
+  zonaAudio.addEventListener('dragover', e => { e.preventDefault(); zonaAudio.classList.add('drag'); });
+  zonaAudio.addEventListener('dragleave', () => zonaAudio.classList.remove('drag'));
+  zonaAudio.addEventListener('drop', e => {
+    e.preventDefault(); zonaAudio.classList.remove('drag');
+    if (e.dataTransfer.files.length) cargarAudios(e.dataTransfer.files);
+  });
+  archivoAudio.addEventListener('change', e => {
+    if (e.target.files.length) cargarAudios(e.target.files);
+  });
+
+  function cargarAudios(files) {
+    audiosCargados = [];
+    resAudio.innerHTML = '';
+    for (const f of files) {
+      if (!f.type.startsWith('audio/') && !f.name.match(/\.(mp3|wav|ogg|m4a|aac|flac)$/i)) continue;
+      audiosCargados.push(f);
+    }
+    if (audiosCargados.length) {
+      resAudio.innerHTML = `<p>${audiosCargados.length} audio(s) listo(s).</p>`;
+      reproductorAudio.src = URL.createObjectURL(audiosCargados[0]);
+      reproductorAudio.style.display = 'block';
+    }
+  }
+
+  function audioBufferToWav(buffer) {
+    const numCanales = buffer.numberOfChannels;
+    const sampleRate = buffer.sampleRate;
+    let resultado;
+    if (numCanales === 2) resultado = intercalar(buffer.getChannelData(0), buffer.getChannelData(1));
+    else resultado = buffer.getChannelData(0);
+    const longitud = resultado.length * 2;
+    const bufferWav = new ArrayBuffer(44 + longitud);
+    const vista = new DataView(bufferWav);
+    escribirTexto(vista, 0, 'RIFF');
+    vista.setUint32(4, 36 + longitud, true);
+    escribirTexto(vista, 8, 'WAVE');
+    escribirTexto(vista, 12, 'fmt ');
+    vista.setUint32(16, 16, true);
+    vista.setUint16(20, 1, true);
+    vista.setUint16(22, numCanales, true);
+    vista.setUint32(24, sampleRate, true);
+    vista.setUint32(28, sampleRate * numCanales * 2, true);
+    vista.setUint16(32, numCanales * 2, true);
+    vista.setUint16(34, 16, true);
+    escribirTexto(vista, 36, 'data');
+    vista.setUint32(40, longitud, true);
+    let offset = 44;
+    for (let i = 0; i < resultado.length; i++, offset += 2) {
+      let s = Math.max(-1, Math.min(1, resultado[i]));
+      vista.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+    }
+    return new Blob([vista], { type: 'audio/wav' });
+  }
+  function intercalar(izq, der) {
+    const len = izq.length + der.length;
+    const res = new Float32Array(len);
+    let idx = 0, i = 0;
+    while (i < izq.length) { res[idx++] = izq[i]; res[idx++] = der[i]; i++; }
+    return res;
+  }
+  function escribirTexto(vista, offset, texto) {
+    for (let i = 0; i < texto.length; i++) vista.setUint8(offset + i, texto.charCodeAt(i));
+  }
+  async function convertirConWebAudio(archivo) {
+    const arrayBuffer = await archivo.arrayBuffer();
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer.slice(0));
+    return audioBufferToWav(audioBuffer);
+  }
+
+  let ffmpeg = null;
+  let ffmpegCargado = false;
+  async function cargarFFmpeg() {
+    if (ffmpegCargado) return ffmpeg;
+    mostrarCarga('Descargando librería multimedia... (solo la primera vez)', true);
+    const { FFmpeg } = FFmpegWASM;
+    const { toBlobURL } = FFmpegUtil;
+    ffmpeg = new FFmpeg();
+    const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
+    await ffmpeg.load({
+      coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+      wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm')
+    });
+    ffmpegCargado = true;
+    return ffmpeg;
+  }
+
+  btnConvertirAudio.addEventListener('click', async () => {
+    if (!audiosCargados.length) { alert('Primero elige audios.'); return; }
+    btnConvertirAudio.disabled = true;
+    mostrarCarga('Convirtiendo audios...', true);
+    resAudio.innerHTML = '';
+    const fmt = formatoAudio.value;
+    const total = audiosCargados.length;
+
+    for (let i = 0; i < total; i++) {
+      const f = audiosCargados[i];
+      setProgreso((i / total) * 100);
+      try {
+        let blob;
+        if (fmt === 'wav') {
+          blob = await convertirConWebAudio(f);
+        } else {
+          if (!ffmpegCargado) mostrarCarga('Descargando librería multimedia... (solo la primera vez)', true);
+          const ff = await cargarFFmpeg();
+          mostrarCarga(`Convirtiendo (${i + 1}/${total})...`, true);
+          setProgreso((i / total) * 100);
+
+          const nombreEntrada = 'entrada_' + i;
+          const nombreSalida = `salida_${i}.${fmt}`;
+          const arrayBuffer = await f.arrayBuffer();
+          await ff.writeFile(nombreEntrada, new Uint8Array(arrayBuffer));
+
+          let args = ['-i', nombreEntrada];
+          if (fmt === 'mp3' || fmt === 'm4a' || fmt === 'aac') args.push('-b:a', '192k');
+          else if (fmt === 'ogg') args.push('-q:a', '5');
+          else if (fmt === 'flac') args.push('-compression_level', '5');
+          args.push(nombreSalida);
+
+          await ff.exec(args);
+          const data = await ff.readFile(nombreSalida);
+          blob = new Blob([data.buffer], { type: 'audio/' + fmt });
+          await ff.deleteFile(nombreEntrada);
+          await ff.deleteFile(nombreSalida);
+        }
+
+        const url = URL.createObjectURL(blob);
+        const nombreSalida = f.name.replace(/\.[^.]+$/, '') + '.' + fmt;
+        const infoPeso = `${pesoLegible(f.size)} → ${pesoLegible(blob.size)}${ahorro(f.size, blob.size)}`;
+        resAudio.innerHTML += `<div class="item">
+          <span class="info"><span class="nombre">✅ ${f.name}</span><small>${infoPeso}</small></span>
+          <a href="${url}" download="${nombreSalida}"><button class="accion">Descargar</button></a>
+        </div>`;
+      } catch (err) {
+        console.error(err);
+        resAudio.innerHTML += `<div class="item">
+          <span class="info"><span class="nombre">❌ ${f.name}</span><small>No se pudo convertir</small></span>
+        </div>`;
+      }
+    }
+    setProgreso(100);
+    ocultarCarga();
+    btnConvertirAudio.disabled = false;
+  });
+
+  // =========================================================
+  // VIDEO
+  // =========================================================
+  const zonaVideo = document.getElementById('zonaVideo');
+  const archivoVideo = document.getElementById('archivoVideo');
+  const formatoVideo = document.getElementById('formatoVideo');
+  const btnConvertirVideo = document.getElementById('btnConvertirVideo');
+  const resVideo = document.getElementById('resVideo');
+  const advVideo = document.getElementById('advVideo');
+  let videoCargado = null;
+
+  function actualizarAdvVideo() {
+    let i = '';
+    if (formatoVideo.value === 'mp4') i = '<strong>MP4:</strong> El más compatible. <strong>Requiere mucha memoria</strong>.';
+    if (formatoVideo.value === 'webm') i = '<strong>WEBM:</strong> Buen tamaño y calidad. <strong>Requiere mucha memoria</strong>.';
+    if (formatoVideo.value === 'gif') i = '<strong>GIF:</strong> Sin audio, animado. <strong>Archivos pesados</strong>. Mejor para clips muy cortos.';
+    if (!cap.potente) i += '<br><br>⚠️ <strong>Tu dispositivo podría no tener memoria suficiente para video.</strong> Puedes intentarlo igual. Si falla, usa un PC.';
+    advVideo.innerHTML = i;
+    advVideo.style.display = i ? 'block' : 'none';
+  }
+  formatoVideo.addEventListener('change', actualizarAdvVideo);
+  actualizarAdvVideo();
+
+  zonaVideo.addEventListener('click', () => archivoVideo.click());
+  zonaVideo.addEventListener('dragover', e => { e.preventDefault(); zonaVideo.classList.add('drag'); });
+  zonaVideo.addEventListener('dragleave', () => zonaVideo.classList.remove('drag'));
+  zonaVideo.addEventListener('drop', e => {
+    e.preventDefault(); zonaVideo.classList.remove('drag');
+    if (e.dataTransfer.files.length) cargarVideo(e.dataTransfer.files[0]);
+  });
+  archivoVideo.addEventListener('change', e => {
+    if (e.target.files.length) cargarVideo(e.target.files[0]);
+  });
+
+  function cargarVideo(f) {
+    if (!f.type.startsWith('video/')) { alert('Selecciona un video.'); return; }
+    videoCargado = f;
+    resVideo.innerHTML = `<p>Video: ${f.name} (${pesoLegible(f.size)})</p>`;
+  }
+
+  btnConvertirVideo.addEventListener('click', async () => {
+    if (!videoCargado) { alert('Primero elige un video.'); return; }
+    btnConvertirVideo.disabled = true;
+    try {
+      const ff = await cargarFFmpeg();
+      mostrarCarga('Convirtiendo video...', true);
+      setProgreso(30);
+
+      const fmt = formatoVideo.value;
+      const nombreEntrada = 'entrada_video';
+      const nombreSalida = `salida.${fmt}`;
+      const arrayBuffer = await videoCargado.arrayBuffer();
+      await ff.writeFile(nombreEntrada, new Uint8Array(arrayBuffer));
+      setProgreso(50);
+
+      let args = ['-i', nombreEntrada];
+      if (fmt === 'mp4') args.push('-c:v', 'libx264', '-preset', 'ultrafast', '-crf', '28', '-c:a', 'aac');
+      else if (fmt === 'webm') args.push('-c:v', 'libvpx', '-b:v', '1M', '-c:a', 'libvorbis');
+      else if (fmt === 'gif') args.push('-vf', 'fps=10,scale=480:-1');
+      args.push(nombreSalida);
+
+      await ff.exec(args);
+      setProgreso(85);
+      const data = await ff.readFile(nombreSalida);
+      const blob = new Blob([data.buffer], { type: 'video/' + fmt });
+      const url = URL.createObjectURL(blob);
+      const infoPeso = `${pesoLegible(videoCargado.size)} → ${pesoLegible(blob.size)}${ahorro(videoCargado.size, blob.size)}`;
+      resVideo.innerHTML = `<div class="item">
+        <span class="info"><span class="nombre">✅ ${videoCargado.name}</span><small>${infoPeso}</small></span>
+        <a href="${url}" download="convertido.${fmt}"><button class="accion">Descargar</button></a>
+      </div>`;
+      await ff.deleteFile(nombreEntrada);
+      await ff.deleteFile(nombreSalida);
+      setProgreso(100);
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo convertir el video. En móviles con poca memoria suele fallar. Prueba en un PC.');
+    } finally {
+      ocultarCarga();
+      btnConvertirVideo.disabled = false;
+    }
+  });
+
+  // =========================================================
+  // PDF
+  // =========================================================
+  const zonaPdf = document.getElementById('zonaPdf');
+  const archivoPdf = document.getElementById('archivoPdf');
+  const accionPdf = document.getElementById('accionPdf');
+  const btnConvertirPdf = document.getElementById('btnConvertirPdf');
+  const resPdf = document.getElementById('resPdf');
+  const advPdf = document.getElementById('advPdf');
+  let archivosPdf = [];
+
+  function actualizarAdvPdf() {
+    let i = '';
+    if (accionPdf.value === 'img2pdf') i = '<strong>Imágenes → PDF:</strong> une varias imágenes en un solo PDF.';
+    if (accionPdf.value === 'pdf2img') i = '<strong>PDF → Imágenes:</strong> convierte cada página del PDF en una imagen JPG.';
+    advPdf.innerHTML = i;
+    advPdf.style.display = i ? 'block' : 'none';
+  }
+  accionPdf.addEventListener('change', actualizarAdvPdf);
+  actualizarAdvPdf();
+
+  zonaPdf.addEventListener('click', () => archivoPdf.click());
+  zonaPdf.addEventListener('dragover', e => { e.preventDefault(); zonaPdf.classList.add('drag'); });
+  zonaPdf.addEventListener('dragleave', () => zonaPdf.classList.remove('drag'));
+  zonaPdf.addEventListener('drop', e => {
+    e.preventDefault(); zonaPdf.classList.remove('drag');
+    if (e.dataTransfer.files.length) cargarPdf(e.dataTransfer.files);
+  });
+  archivoPdf.addEventListener('change', e => {
+    if (e.target.files.length) cargarPdf(e.target.files);
+  });
+
+  function cargarPdf(files) {
+    archivosPdf = Array.from(files);
+    resPdf.innerHTML = `<p>${archivosPdf.length} archivo(s) listo(s).</p>`;
+  }
+
+  btnConvertirPdf.addEventListener('click', async () => {
+    if (!archivosPdf.length) { alert('Primero elige archivos.'); return; }
+    btnConvertirPdf.disabled = true;
+    const accion = accionPdf.value;
+    try {
+      if (accion === 'img2pdf') {
+        mostrarCarga('Creando PDF...', true);
+        if (!window.PDFLib) await cargarScript('https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js');
+        const { PDFDocument } = PDFLib;
+        const pdfDoc = await PDFDocument.create();
+        const total = archivosPdf.length;
+        for (let i = 0; i < total; i++) {
+          const f = archivosPdf[i];
+          if (!f.type.startsWith('image/')) continue;
+          setProgreso((i / total) * 100);
+          const bytes = await f.arrayBuffer();
+          let img;
+          if (f.type === 'image/png') img = await pdfDoc.embedPng(bytes);
+          else img = await pdfDoc.embedJpg(bytes);
+          const page = pdfDoc.addPage([img.width, img.height]);
+          page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        }
+        setProgreso(95);
+        const pdfBytes = await pdfDoc.save();
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        resPdf.innerHTML = `<div class="item">
+          <span class="info"><span class="nombre">✅ PDF creado</span><small>${pesoLegible(blob.size)}</small></span>
+          <a href="${url}" download="documento.pdf"><button class="accion">Descargar</button></a>
+        </div>`;
+      } else {
+        mostrarCarga('Extrayendo imágenes del PDF...', true);
+        const f = archivosPdf[0];
+        if (f.type !== 'application/pdf') { alert('Selecciona un PDF.'); return; }
+        if (!window.pdfjsLib) {
+          await cargarScript('https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.min.js');
+          pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://unpkg.com/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+        }
+        const bytes = await f.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+        resPdf.innerHTML = '';
+        for (let p = 1; p <= pdf.numPages; p++) {
+          setProgreso((p / pdf.numPages) * 100);
+          const page = await pdf.getPage(p);
+          const viewport = page.getViewport({ scale: 2 });
+          const canvas = document.createElement('canvas');
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext('2d');
+          await page.render({ canvasContext: ctx, viewport }).promise;
+          await new Promise(resolve => {
+            canvas.toBlob(blob => {
+              const url = URL.createObjectURL(blob);
+              resPdf.innerHTML += `<div class="item">
+                <span class="info"><span class="nombre">✅ Página ${p}</span><small>${pesoLegible(blob.size)}</small></span>
+                <a href="${url}" download="pagina_${p}.jpg"><button class="accion">Descargar</button></a>
+              </div>`;
+              resolve();
+            }, 'image/jpeg', 0.9);
+          });
+        }
+      }
+      setProgreso(100);
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo procesar el PDF. Verifica que el archivo sea válido.');
+    } finally {
+      ocultarCarga();
+      btnConvertirPdf.disabled = false;
+    }
+  });
+
+  // =========================================================
+  // OCR
+  // =========================================================
+  const zonaOcr = document.getElementById('zonaOcr');
+  const archivoOcr = document.getElementById('archivoOcr');
+  const idiomaOcr = document.getElementById('idiomaOcr');
+  const btnConvertirOcr = document.getElementById('btnConvertirOcr');
+  const resOcr = document.getElementById('resOcr');
+  let ocrArchivo = null;
+
+  zonaOcr.addEventListener('click', () => archivoOcr.click());
+  zonaOcr.addEventListener('dragover', e => { e.preventDefault(); zonaOcr.classList.add('drag'); });
+  zonaOcr.addEventListener('dragleave', () => zonaOcr.classList.remove('drag'));
+  zonaOcr.addEventListener('drop', e => {
+    e.preventDefault(); zonaOcr.classList.remove('drag');
+    if (e.dataTransfer.files.length) cargarOcr(e.dataTransfer.files[0]);
+  });
+  archivoOcr.addEventListener('change', e => {
+    if (e.target.files.length) cargarOcr(e.target.files[0]);
+  });
+
+  function cargarOcr(f) {
+    if (!f.type.startsWith('image/')) { alert('Selecciona una imagen.'); return; }
+    ocrArchivo = f;
+    resOcr.innerHTML = `<p>Imagen lista: ${f.name}</p>`;
+  }
+
+  btnConvertirOcr.addEventListener('click', async () => {
+    if (!ocrArchivo) { alert('Primero elige una imagen.'); return; }
+    btnConvertirOcr.disabled = true;
+    try {
+      if (!window.Tesseract) {
+        mostrarCarga('Descargando librería OCR... (~15 MB, solo la primera vez)', true);
+        await cargarScript('https://unpkg.com/tesseract.js@5.0.4/dist/tesseract.min.js');
+      }
+      mostrarCarga('Reconociendo texto... puede tardar', true);
+      setProgreso(30);
+      const { data: { text } } = await Tesseract.recognize(ocrArchivo, idiomaOcr.value, {
+        logger: m => {
+          if (m.status === 'recognizing text') setProgreso(30 + (m.progress * 70));
+        }
+      });
+      setProgreso(100);
+      const texto = text.trim();
+      resOcr.innerHTML = `<p><strong>Texto extraído:</strong></p>
+        <textarea id="txtOcr" style="width:100%;height:150px;font-size:13px;padding:8px;border:1px solid var(--borde);border-radius:6px;background:var(--caja);color:var(--texto);">${texto}</textarea>
+        <button class="accion" onclick="copiarOcr()">Copiar texto</button>`;
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo reconocer el texto. Prueba con una imagen más clara.');
+    } finally {
+      ocultarCarga();
+      btnConvertirOcr.disabled = false;
+    }
+  });
+
+  window.copiarOcr = function() {
+    const t = document.getElementById('txtOcr');
+    if (!t) return;
+    t.select();
+    document.execCommand('copy');
+    alert('Texto copiado.');
+  };
+
+  // =========================================================
+  // PWA
+  // =========================================================
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(e => console.log('SW no registrado:', e));
+    });
+  }
+</script>
+
+<script src="https://unpkg.com/@ffmpeg/ffmpeg@0.12.10/dist/umd/ffmpeg.js"></script>
+<script src="https://unpkg.com/@ffmpeg/util@0.12.1/dist/umd/index.js"></script>
+
+</body>
+</html>
